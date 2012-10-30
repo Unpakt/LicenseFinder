@@ -43,6 +43,21 @@ Given /^I whitelist the following licenses: "([^"]*)"$/ do |licenses|
   @user.configure_license_finder_whitelist licenses.split(", ")
 end
 
+Given /^I have a legacy dependencies\.yml file with "(.*?)" approved with its "(.*?)" license$/ do |gem_name, license_name|
+  File.open(@user.dependencies_file_path, 'w+') do |f|
+    <<-YAML
+    - name: #{gem_name}
+      version: 1.5.0
+      license: #{license_name}
+      approved: true
+      notes: ''
+      license_files:
+      - path: /some/path/to/files/that/are/rad
+      readme_files:
+    YAML
+  end
+end
+
 When /^I run "(.*?)"$/ do |command|
   @output = @user.execute_command command
 end
@@ -104,6 +119,11 @@ end
 
 Then /^I should see the file "([^"]*)" containing:$/ do |filename, text|
   File.read(@user.app_path(filename)).should include(text.gsub(/^\s+/, ""))
+end
+
+Then /^I should see exactly one entry for "(.*?)" in "(.*?)"$/ do |gem_name, filename|
+  file_contents = File.read(@user.app_path(filename))
+  file_contents.scan(/#{gem_name}/).size.should == 1
 end
 
 Then /^I should see the following settings for "([^"]*)":$/ do |name, yaml|
